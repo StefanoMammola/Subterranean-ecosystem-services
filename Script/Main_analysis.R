@@ -44,6 +44,33 @@ db$Subterranean.Terrestrial <- as.numeric(as.character(db$Subterranean.Terrestri
 db$Subterranean.Freshwater  <- as.numeric(as.character(db$Subterranean.Freshwater))
 db$Subterranean.Marine      <- as.numeric(as.character(db$Subterranean.Marine))
 
+#Selecting only important columns for analysis
+db <- db |>
+  dplyr::select(Type,
+                Section,
+                Division,
+                Class,
+                Subt = Subterranean.Any,
+                Ter = Subterranean.Terrestrial,
+                Fre = Subterranean.Freshwater,
+                Mar = Subterranean.Marine)
+
+# Analysis ----------------------------------------------------------------
+
+#% services
+sum(db$Subt)/nrow(db)
+sum(db$Ter)/nrow(db)
+sum(db$Fre)/nrow(db)
+sum(db$Mar)/nrow(db)
+
+#% by type
+table(db[db$Subt > 0,]$Section)/table(db$Section)*100
+
+
+
+
+table(db$Type)
+
 
 
 # Trim white spaces if needed
