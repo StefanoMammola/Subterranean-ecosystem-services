@@ -14,7 +14,7 @@
 # Loading R packages ------------------------------------------------------
 
 if(!require("pacman")) {install.packages("pacman")}
-pacman::p_load("dplyr","ggplot2","tibble","tidyr")
+pacman::p_load("dplyr","ggalluvial","ggplot2","tibble","tidyr")
 
 # Script settings -----------------------------------------------------------
 theme_set(theme_bw())
@@ -44,6 +44,8 @@ db$Subterranean.Terrestrial <- as.numeric(as.character(db$Subterranean.Terrestri
 db$Subterranean.Freshwater  <- as.numeric(as.character(db$Subterranean.Freshwater))
 db$Subterranean.Marine      <- as.numeric(as.character(db$Subterranean.Marine))
 
+colnames(db)
+
 #Selecting only important columns for analysis
 db <- db |>
   dplyr::select(Type,
@@ -51,9 +53,15 @@ db <- db |>
                 Division,
                 Class,
                 Subt = Subterranean.Any,
-                Ter = Subterranean.Terrestrial,
-                Fre = Subterranean.Freshwater,
-                Mar = Subterranean.Marine)
+                Terrestrial = Subterranean.Terrestrial,
+                Freshwater = Subterranean.Freshwater,
+                Marine = Subterranean.Marine,
+                Stakeholder = Primary_stakeholder_std,
+                Assessed_Ter = Assessed_quantitatively_terrestrial,
+                Assessed_Fre = Assessed_quantitatively_freshwater,
+                Assessed_Mar = Assessed_quantitatively_marine)
+
+head(db,3)
 
 # Analysis ----------------------------------------------------------------
 
@@ -69,7 +77,35 @@ table(db[db$Subt > 0,]$Section)/table(db$Section)*100
 
 
 
-table(db$Type)
+# Plotting ecosystem services vs stakeholders ---------------------------------------------
+
+db |>
+  tidyr::separate_rows(Stakeholder, sep = ";") |> # Splits rows by ";"
+  pivot_longer(cols = c(Terrestrial, Freshwater, Marine),
+                        names_to = "System",
+                        values_to = "Presence") |> 
+                 # Sum the presences
+                 group_by(System, Section, Stakeholder) |> 
+                 summarise(TotalPresence = sum(Presence), .groups = 'drop') |> # Summarize counts
+                 dplyr::mutate( # Sort
+                   System = factor(System, levels = c("Terrestrial", "Freshwater", "Marine")), 
+                   Section = factor(Section, levels = c("Provisioning", "Regulation & Maintenance", "Cultural")),
+                   Stakeholder = factor(Stakeholder, levels = c("Primary", "Secondary", "Tertiary", "Quaternary", "All (society)"))) |> 
+                 # Plot
+                 ggplot(aes(axis1 = System, axis2 = Section, axis3 = Stakeholder, y = TotalPresence)) + # Use TotalPresence
+                 geom_alluvium(aes(fill = System), width = 1/12, alpha = 0.6, color = NA) +
+                 geom_stratum(aes(fill = System), width = 1/12) +
+                 geom_text(stat = "stratum", aes(label = after_stat(stratum)), color = "grey20") +
+                 scale_x_discrete(limits = c("Subterranean system", "Service type", "Main beneficiary"), expand = c(0.15, 0.15)) +
+                 scale_fill_manual(values = c("Terrestrial" = "#8B4513", "Freshwater" = "#4682B4", "Marine" = "darkblue")) +
+                 labs(title = NULL, x = NULL, y = NULL) +
+                 theme_void() + 
+                 theme(
+                   legend.position = "none",           # Remove legend
+                   axis.text.y = element_blank(),      # Remove y-axis text
+                   axis.ticks.y = element_blank(),     # Remove y-axis ticks
+                   axis.text.x = element_text(size = 12) # Enlarge x-axis tick text
+                 )
 
 
 
