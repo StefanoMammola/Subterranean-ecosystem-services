@@ -92,21 +92,20 @@ db |>
                    Section = factor(Section, levels = c("Provisioning", "Regulation & Maintenance", "Cultural")),
                    Stakeholder = factor(Stakeholder, levels = c("Primary", "Secondary", "Tertiary", "Quaternary", "All (society)"))) |> 
                  # Plot
-                 ggplot(aes(axis1 = System, axis2 = Section, axis3 = Stakeholder, y = TotalPresence)) + # Use TotalPresence
-                 geom_alluvium(aes(fill = System), width = 1/12, alpha = 0.6, color = NA) +
-                 geom_stratum(aes(fill = System), width = 1/12) +
-                 geom_text(stat = "stratum", aes(label = after_stat(stratum)), color = "grey20") +
-                 scale_x_discrete(limits = c("Subterranean system", "Service type", "Main beneficiary"), expand = c(0.15, 0.15)) +
+                 ggplot(aes(axis1 = System, axis2 = Section, axis3 = Stakeholder, y = TotalPresence)) + 
+                 geom_alluvium(aes(fill = System), width = 1/12, alpha = 0.4, color = NA) +
+                 geom_stratum(aes(fill = System), width = 1/12,alpha = 0.4, color = "grey35") +
+                 geom_text(stat = "stratum", aes(label = after_stat(stratum)), color = "grey5", hjust = 1, angle = 25) +
+                 scale_x_discrete(limits = c("Subterranean system", "Service type\n(CICES Section)", "Main beneficiary\n(Economic sector)"), expand = c(0.15, 0.15)) +
                  scale_fill_manual(values = c("Terrestrial" = "#8B4513", "Freshwater" = "#4682B4", "Marine" = "darkblue")) +
                  labs(title = NULL, x = NULL, y = NULL) +
-                 theme_void() + 
+                 theme_minimal() + 
                  theme(
                    legend.position = "none",           # Remove legend
-                   axis.text.y = element_blank(),      # Remove y-axis text
-                   axis.ticks.y = element_blank(),     # Remove y-axis ticks
+                   #axis.text.y = element_blank(),      # Remove y-axis text
+                   #axis.ticks.y = element_blank(),     # Remove y-axis ticks
                    axis.text.x = element_text(size = 12) # Enlarge x-axis tick text
                  )
-
 
 
 # Trim white spaces if needed
