@@ -76,9 +76,9 @@ table(db[db$Subt > 0,]$Section)/table(db$Section)*100
 
 # Plotting ecosystem services vs stakeholders ---------------------------------------------
 
-my.colors.system <- c("Terrestrial" = "#8B4513", 
-                      "Freshwater" = "#4682B4", 
-                      "Marine" = "darkblue")
+my.colors.system <- c("Terrestrial" = "#A0522D", 
+                      "Freshwater" = "#5DADE2", 
+                      "Marine" = "#154360")
 
 db |>
   tidyr::separate_rows(Stakeholder, sep = ";") |> # Splits rows by ";"
@@ -106,7 +106,7 @@ db |>
                  )
 
 ####
-db |> dplyr::select(Section, 
+(figure2 <- db |> dplyr::select(Section, 
                     Terrestrial, 
                     Freshwater,
                     Marine, 
@@ -140,8 +140,9 @@ db |> dplyr::select(Section,
                   rep(each = 3)
   ) |>
   mutate(
-    PercentTested = (TotalPresence / TotalCount) * 100,
-    Label = paste0(round(PercentTested, 1), "%"),
+    PercentTotal = (TotalPresence / TotalCount) * 100,
+    PercentTested = (TotalTested / TotalPresence) * 100,
+    Label = paste0(round(PercentTotal, 1), "% (",round(PercentTested, 1),"%)"),
     System = factor(System, levels = c("Terrestrial", "Freshwater", "Marine")), 
     Section = factor(Section, levels = c("Provisioning", "Regulation & Maintenance", "Cultural"))) |>
   #plotting
@@ -149,7 +150,8 @@ db |> dplyr::select(Section,
   geom_bar(aes(y = TotalCount), stat = "identity", fill = "white",color = "grey10", show.legend = FALSE) +   # Outer bar for TotalCount
   geom_bar(aes(y = TotalPresence, fill = System), stat = "identity", alpha = 0.6, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
   geom_bar(aes(y = TotalTested, fill = System), stat = "identity", color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
-  geom_text(aes(y = TotalPresence + 2, label = Label, color = System), size = 4, show.legend = FALSE) +
+  geom_text(aes(y = TotalPresence + 2, label = Label, color = System), 
+            size = 3, show.legend = FALSE) +
   facet_wrap(~ Section) +
   scale_fill_manual(values = my.colors.system) +
   scale_color_manual(values = my.colors.system) +
@@ -157,8 +159,62 @@ db |> dplyr::select(Section,
   theme(
     strip.text = element_text(size = 12, face = "bold"),
     panel.spacing = unit(1, "lines"),
-    axis.text.x = element_text(angle = 45, hjust = 1)
+    axis.text.x = element_text(angle = 45, hjust = .8)
+  ))
+
+## Custom legend
+
+library(patchwork) # For combining plots
+
+# Create a dummy dataset for the legend
+legend_data <- data.frame(
+  Category = factor(c("TotalCount", "TotalPresence", "TotalTested"),
+                    levels = c("TotalCount", "TotalPresence", "TotalTested")),
+  Value = c(100, 60, 40),
+  Label = rev(c("All\nservices", "Subterranean\nservices", "Tested\nsubterranean\nservices"))
+)
+
+# Calculate cumulative values for positioning
+legend_data <- legend_data |> 
+  dplyr::mutate(CumValue = cumsum(Value) - (Value / 2))  # Midpoint of each segment
+
+# Create the custom legend
+(custom_legend <- ggplot(legend_data, aes(x = 1, y = Value, fill = Category)) +
+  geom_bar(stat = "identity", position = "identity", width = 0.5, alpha = 0.5,color = "black") +
+  geom_text(aes(y = c(20,50,80), label = Label),  # Use calculated midpoints
+            size = 3, color = c("white","white","black")) +
+  # geom_text(aes(y = 65, label = "Subterranean %\n(Tested subterranean %)"), color = "darkblue",
+  #            size = 2, show.legend = FALSE) +
+  scale_fill_manual(values = c(
+    "TotalCount" = "white",
+    "TotalPresence" = "blue",
+    "TotalTested" = "darkblue"
+  )) +
+  theme_void() +  # Remove unnecessary elements
+  labs(title = NULL, x = "                                             ") +
+  theme(
+    plot.title = element_text(size = 10, face = "bold", hjust = 0.5),
+    legend.position = "none",
+    plot.margin = margin(10, 50, 50, 10),
+    axis.title.x = element_text(angle = 90, hjust = .8))
   )
+
+
+
+
+library(cowplot)
+
+# Combine the main plot and the legend
+final_plot <- cowplot::plot_grid(
+  figure2,                      # Your existing main plot
+  custom_legend,                  # The custom legend
+  ncol = 2,                       # Arrange side by side
+  rel_widths = c(5, 1)            # Adjust the width ratio (main plot wider)
+)
+
+final_plot
+
+
 
 # 
 # db |> dplyr::select(Section, 
