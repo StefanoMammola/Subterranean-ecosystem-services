@@ -17,7 +17,7 @@ if(!require("pacman")) {install.packages("pacman")}
 pacman::p_load("dplyr","ggalluvial","ggplot2","tibble","tidyr")
 
 # Script settings -----------------------------------------------------------
-theme_set(theme_bw())
+theme_set(theme_minimal())
 
 theme_update(
   legend.background = element_blank(), #No background (legend)
@@ -75,7 +75,11 @@ sum(db$Mar)/nrow(db)
 table(db[db$Subt > 0,]$Section)/table(db$Section)*100
 
 # Plotting ecosystem services vs stakeholders ---------------------------------------------
-str(db)
+
+my.colors.system <- c("Terrestrial" = "#8B4513", 
+                      "Freshwater" = "#4682B4", 
+                      "Marine" = "darkblue")
+
 db |>
   tidyr::separate_rows(Stakeholder, sep = ";") |> # Splits rows by ";"
   tidyr::pivot_longer(cols = c(Terrestrial, Freshwater, Marine),
@@ -92,9 +96,8 @@ db |>
                  geom_stratum(aes(fill = System), width = 1/12,alpha = 0.4, color = "grey5") +
                  geom_text(stat = "stratum", aes(label = after_stat(stratum)), color = "grey5", hjust = 1, angle = 25) +
                  scale_x_discrete(limits = c("Subterranean system", "Service type\n(CICES Section)", "Main beneficiary\n(Economic sector)"), expand = c(0.15, 0.15)) +
-                 scale_fill_manual(values = c("Terrestrial" = "#8B4513", "Freshwater" = "#4682B4", "Marine" = "darkblue")) +
+                 scale_fill_manual(values = my.colors.system) +
                  labs(title = NULL, x = NULL, y = NULL) +
-                 theme_minimal() + 
                  theme(
                    legend.position = "none",           # Remove legend
                    #axis.text.y = element_blank(),      # Remove y-axis text
@@ -138,73 +141,72 @@ db |> dplyr::select(Section,
   ) |>
   mutate(
     PercentTested = (TotalPresence / TotalCount) * 100,
-    Label = paste0(round(PercentTested, 1), "%")) |>
-  dplyr::mutate( # Sort
+    Label = paste0(round(PercentTested, 1), "%"),
     System = factor(System, levels = c("Terrestrial", "Freshwater", "Marine")), 
     Section = factor(Section, levels = c("Provisioning", "Regulation & Maintenance", "Cultural"))) |>
   #plotting
   ggplot(aes(x = System)) +
   geom_bar(aes(y = TotalCount), stat = "identity", fill = "white",color = "grey10", show.legend = FALSE) +   # Outer bar for TotalCount
-  geom_bar(aes(y = TotalPresence, fill = System), stat = "identity", alpha = 0, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
   geom_bar(aes(y = TotalPresence, fill = System), stat = "identity", alpha = 0.6, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
   geom_bar(aes(y = TotalTested, fill = System), stat = "identity", color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
   geom_text(aes(y = TotalPresence + 2, label = Label, color = System), size = 4, show.legend = FALSE) +
   facet_wrap(~ Section) +
-  scale_fill_manual(values = c("Terrestrial" = "#8B4513", 
-                               "Freshwater" = "#4682B4", 
-                               "Marine" = "darkblue")) +
-  scale_color_manual(values = c("Terrestrial" = "#8B4513", 
-                               "Freshwater" = "#4682B4", 
-                               "Marine" = "darkblue")) +
-  labs(title = NULL, x = NULL, y = "Frequency") + 
-  theme_minimal()
+  scale_fill_manual(values = my.colors.system) +
+  scale_color_manual(values = my.colors.system) +
+  labs(title = NULL, x = NULL, y = "Number of ecosystem services") + 
+  theme(
+    strip.text = element_text(size = 12, face = "bold"),
+    panel.spacing = unit(1, "lines"),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  )
 
-db |> dplyr::select(Section, 
-                    Terrestrial, 
-                    Freshwater,
-                    Marine, 
-                    Assessed_Ter, 
-                    Assessed_Fre, 
-                    Assessed_Mar) |>
-  {\(.) {replace(.,is.na(.),0)}}()  |> #replace NA
-  tidyr::pivot_longer(cols = c(Terrestrial, Freshwater, Marine),
-                      names_to = "System",
-                      values_to = "Presence") |> 
-  dplyr::group_by(Section,System) |>
-  dplyr::summarise(TotalPresence = sum(Presence, na.rm = TRUE),
-                   .groups = 'drop') |>
-  dplyr::mutate(TotalTested = #adding total number of tested services
-                  db |> dplyr::select(Section, 
-                                      Assessed_Ter, 
-                                      Assessed_Fre, 
-                                      Assessed_Mar) |>
-                  {\(.) {replace(.,is.na(.),0)}}()  |> #replace NA
-                  tidyr::pivot_longer(cols = c(Assessed_Ter, Assessed_Fre, Assessed_Mar),
-                                      names_to = "Tested",
-                                      values_to = "Assessed") |> 
-                  dplyr::group_by(Section,Tested) |>
-                  dplyr::summarise(TotalTested = sum(Assessed, na.rm = TRUE),
-                                   .groups = 'drop') |>
-                  dplyr::pull(TotalTested),
-                TotalCount = #adding total number of services
-                  table(db$Section) |> 
-                  data.frame() |> 
-                  dplyr::pull(Freq) |> 
-                  rep(each = 3)
-  ) |>
-  mutate(
-    PercentTested = (TotalPresence / TotalCount) * 100,
-    Label = paste0(round(PercentTested, 1), "%")) |>
-  dplyr::mutate( # Sort
-    System = factor(System, levels = c("Terrestrial", "Freshwater", "Marine")), 
-    Section = factor(Section, levels = c("Provisioning", "Regulation & Maintenance", "Cultural"))) |>
-  #plotting
-  ggplot(aes(x = Section)) +
-  geom_bar(aes(y = TotalCount), stat = "identity", fill = "white",color = "grey10", show.legend = FALSE) +   # Outer bar for TotalCount
-  geom_bar(aes(y = TotalPresence, fill = Section), stat = "identity", alpha = 0, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
-  geom_bar(aes(y = TotalPresence, fill = Section), stat = "identity", alpha = 0.6, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
-  geom_bar(aes(y = TotalTested, fill = Section), stat = "identity", color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
-  geom_text(aes(y = TotalCount + 1.5, label = Label), color = "grey5", size = 4) +
-  facet_wrap(~ System) +
-  labs(title = NULL, x = NULL, y = "Frequency") + 
-  theme_minimal()
+# 
+# db |> dplyr::select(Section, 
+#                     Terrestrial, 
+#                     Freshwater,
+#                     Marine, 
+#                     Assessed_Ter, 
+#                     Assessed_Fre, 
+#                     Assessed_Mar) |>
+#   {\(.) {replace(.,is.na(.),0)}}()  |> #replace NA
+#   tidyr::pivot_longer(cols = c(Terrestrial, Freshwater, Marine),
+#                       names_to = "System",
+#                       values_to = "Presence") |> 
+#   dplyr::group_by(Section,System) |>
+#   dplyr::summarise(TotalPresence = sum(Presence, na.rm = TRUE),
+#                    .groups = 'drop') |>
+#   dplyr::mutate(TotalTested = #adding total number of tested services
+#                   db |> dplyr::select(Section, 
+#                                       Assessed_Ter, 
+#                                       Assessed_Fre, 
+#                                       Assessed_Mar) |>
+#                   {\(.) {replace(.,is.na(.),0)}}()  |> #replace NA
+#                   tidyr::pivot_longer(cols = c(Assessed_Ter, Assessed_Fre, Assessed_Mar),
+#                                       names_to = "Tested",
+#                                       values_to = "Assessed") |> 
+#                   dplyr::group_by(Section,Tested) |>
+#                   dplyr::summarise(TotalTested = sum(Assessed, na.rm = TRUE),
+#                                    .groups = 'drop') |>
+#                   dplyr::pull(TotalTested),
+#                 TotalCount = #adding total number of services
+#                   table(db$Section) |> 
+#                   data.frame() |> 
+#                   dplyr::pull(Freq) |> 
+#                   rep(each = 3)
+#   ) |>
+#   mutate(
+#     PercentTested = (TotalPresence / TotalCount) * 100,
+#     Label = paste0(round(PercentTested, 1), "%")) |>
+#   dplyr::mutate( # Sort
+#     System = factor(System, levels = c("Terrestrial", "Freshwater", "Marine")), 
+#     Section = factor(Section, levels = c("Provisioning", "Regulation & Maintenance", "Cultural"))) |>
+#   #plotting
+#   ggplot(aes(x = Section)) +
+#   geom_bar(aes(y = TotalCount), stat = "identity", fill = "white",color = "grey10", show.legend = FALSE) +   # Outer bar for TotalCount
+#   geom_bar(aes(y = TotalPresence, fill = Section), stat = "identity", alpha = 0, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
+#   geom_bar(aes(y = TotalPresence, fill = Section), stat = "identity", alpha = 0.6, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
+#   geom_bar(aes(y = TotalTested, fill = Section), stat = "identity", color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
+#   geom_text(aes(y = TotalCount + 1.5, label = Label), color = "grey5", size = 4) +
+#   facet_wrap(~ System) +
+#   labs(title = NULL, x = NULL, y = "Frequency") + 
+#   theme_minimal()
