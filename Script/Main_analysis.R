@@ -126,9 +126,9 @@ my.colors.system <- c("Terrestrial" = "#A0522D",
     geom_bar(aes(y = TotalCount), stat = "identity", fill = "white",color = "grey10", show.legend = FALSE) +   # Outer bar for TotalCount
     geom_bar(aes(y = TotalPresence, fill = System), stat = "identity", alpha = 0.6, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
     geom_bar(aes(y = TotalTested, fill = System), stat = "identity", color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
-    geom_text(aes(y = TotalPresence + 2, label = Label, color = System), 
+    geom_text(aes(y = TotalCount + 2, label = Label, color = System), 
               size = 3, show.legend = FALSE) +
-    facet_wrap(~ Section) +
+    facet_wrap(~ Section, nrow =3) +
     scale_fill_manual(values = my.colors.system) +
     scale_color_manual(values = my.colors.system) +
     labs(title = NULL, x = NULL, y = "Number of ecosystem services") + 
@@ -201,7 +201,7 @@ my.colors.system <- c("Terrestrial" = "#A0522D",
 ### Saving the figures ###
 
 # Figure 1
-pdf(file = "Figures/Figure_1.pdf", width = 15, height = 8)
+pdf(file = "Figures/Figure_1.pdf", width = 15, height = 11)
 figure1
 dev.off()
 
@@ -219,56 +219,3 @@ dev.off()
 #                   #align = "h",
 #                   labels = c("A", ""),
 #                   ncol=1, nrow=2) 
-
-# Figure 2 ----------------------------------------------------------------
-
- 
-# db |> dplyr::select(Section, 
-#                     Terrestrial, 
-#                     Freshwater,
-#                     Marine, 
-#                     Assessed_Ter, 
-#                     Assessed_Fre, 
-#                     Assessed_Mar) |>
-#   {\(.) {replace(.,is.na(.),0)}}()  |> #replace NA
-#   tidyr::pivot_longer(cols = c(Terrestrial, Freshwater, Marine),
-#                       names_to = "System",
-#                       values_to = "Presence") |> 
-#   dplyr::group_by(Section,System) |>
-#   dplyr::summarise(TotalPresence = sum(Presence, na.rm = TRUE),
-#                    .groups = 'drop') |>
-#   dplyr::mutate(TotalTested = #adding total number of tested services
-#                   db |> dplyr::select(Section, 
-#                                       Assessed_Ter, 
-#                                       Assessed_Fre, 
-#                                       Assessed_Mar) |>
-#                   {\(.) {replace(.,is.na(.),0)}}()  |> #replace NA
-#                   tidyr::pivot_longer(cols = c(Assessed_Ter, Assessed_Fre, Assessed_Mar),
-#                                       names_to = "Tested",
-#                                       values_to = "Assessed") |> 
-#                   dplyr::group_by(Section,Tested) |>
-#                   dplyr::summarise(TotalTested = sum(Assessed, na.rm = TRUE),
-#                                    .groups = 'drop') |>
-#                   dplyr::pull(TotalTested),
-#                 TotalCount = #adding total number of services
-#                   table(db$Section) |> 
-#                   data.frame() |> 
-#                   dplyr::pull(Freq) |> 
-#                   rep(each = 3)
-#   ) |>
-#   mutate(
-#     PercentTested = (TotalPresence / TotalCount) * 100,
-#     Label = paste0(round(PercentTested, 1), "%")) |>
-#   dplyr::mutate( # Sort
-#     System = factor(System, levels = c("Terrestrial", "Freshwater", "Marine")), 
-#     Section = factor(Section, levels = c("Provisioning", "Regulation & Maintenance", "Cultural"))) |>
-#   #plotting
-#   ggplot(aes(x = Section)) +
-#   geom_bar(aes(y = TotalCount), stat = "identity", fill = "white",color = "grey10", show.legend = FALSE) +   # Outer bar for TotalCount
-#   geom_bar(aes(y = TotalPresence, fill = Section), stat = "identity", alpha = 0, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
-#   geom_bar(aes(y = TotalPresence, fill = Section), stat = "identity", alpha = 0.6, color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
-#   geom_bar(aes(y = TotalTested, fill = Section), stat = "identity", color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
-#   geom_text(aes(y = TotalCount + 1.5, label = Label), color = "grey5", size = 4) +
-#   facet_wrap(~ System) +
-#   labs(title = NULL, x = NULL, y = "Frequency") + 
-#   theme_minimal()
