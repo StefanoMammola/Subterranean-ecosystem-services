@@ -201,12 +201,12 @@ my.colors.system <- c("Terrestrial" = "#A0522D",
 ### Saving the figures ###
 
 # Figure 1
-pdf(file = "Figures/Figure_1.pdf", width = 15, height = 11)
+pdf(file = "Figures/Figure_2.pdf", width = 15, height = 11)
 figure1
 dev.off()
 
 # Figure 2
-pdf(file = "Figures/Figure_2.pdf", width = 12, height = 5)
+pdf(file = "Figures/Figure_3.pdf", width = 12, height = 5)
 figure2
 dev.off()
 
