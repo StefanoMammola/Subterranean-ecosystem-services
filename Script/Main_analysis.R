@@ -130,7 +130,7 @@ my.colors.system <- c("Terrestrial" = "#A0522D",
     geom_bar(aes(y = TotalTested, fill = System), stat = "identity", color = NA, show.legend = FALSE) +   # Inner bar for TotalCount
     geom_text(aes(y = TotalCount + 2, label = Label, color = System), 
               size = 3, show.legend = FALSE) +
-    facet_wrap(~ Section, nrow =3) +
+    facet_wrap(~ Section, ncol =3) +
     scale_fill_manual(values = my.colors.system) +
     scale_color_manual(values = my.colors.system) +
     labs(title = NULL, x = NULL, y = "Number of ecosystem services") + 
@@ -152,7 +152,7 @@ my.colors.system <- c("Terrestrial" = "#A0522D",
     geom_text(aes(y = c(20,60,90), label = Label),  # Use calculated midpoints
               size = 3, color = "grey5") +
     geom_text(aes(y = 105, label = "% Subterranean (% Tested)"), color = "grey10",
-              size = 3, show.legend = FALSE) +
+              size = 2, show.legend = FALSE) +
     scale_fill_manual(values = c(
       "TotalCount" = "white",
       "TotalPresence" = "grey70",
@@ -190,25 +190,28 @@ my.colors.system <- c("Terrestrial" = "#A0522D",
     geom_alluvium(aes(fill = System), width = 1/12, alpha = 0.4, color = NA) +
     geom_stratum(aes(fill = System), width = 1/12,alpha = 0.4, color = "grey5") +
     geom_text(stat = "stratum", aes(label = after_stat(stratum)), color = "grey5", hjust = 1, angle = 25) +
-    scale_x_discrete(limits = c("Subterranean system", "Service type\n(CICES Section)", "Main beneficiary\n(Economic sector)"), expand = c(0.15, 0.15)) +
+    scale_x_discrete(limits = c("Subterranean system", 
+                                "Service type\n(CICES Section)", 
+                                "Main beneficiary\n(Economic sector)"), expand = c(0.15, 0.15)) +
     scale_fill_manual(values = my.colors.system) +
-    labs(title = NULL, x = NULL, y = NULL) +
+    labs(title = NULL, x = NULL, y = "Number of classified services") +
     theme(
       legend.position = "none",           # Remove legend
       #axis.text.y = element_blank(),      # Remove y-axis text
       #axis.ticks.y = element_blank(),     # Remove y-axis ticks
-      axis.text.x = element_text(size = 12) # Enlarge x-axis tick text
+      axis.text.x = element_text(size = 12), # Enlarge x-axis tick text
+      axis.text.y = element_text(size = 10)
     ))
 
 ### Saving the figures ###
 
 # Figure 2
-pdf(file = "Figures/Figure_2.pdf", width = 15, height = 11)
+pdf(file = "Figures/Figure_2.pdf", width = 13, height = 9)
 figure2
 dev.off()
 
 # Figure 3
-pdf(file = "Figures/Figure_3.pdf", width = 12, height = 5)
+pdf(file = "Figures/Figure_3.pdf", width = 8, height = 5)
 figure3
 dev.off()
 
