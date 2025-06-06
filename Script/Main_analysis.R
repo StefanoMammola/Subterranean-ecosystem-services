@@ -1,5 +1,5 @@
 ## ------------------------------------------------------------------------
-## 'Subterranean ecosystem services'
+## 'Subterranean environments contribute to three-quarters of classified ecosystem services'
 ## ------------------------------------------------------------------------
 
 # Mammola, S. et al.
@@ -9,7 +9,7 @@
 ## ------------------------------------------------------------------------
 
 # Analysis performed with R (v. R 4.0.3) and R studio (v. 1.4.1103)
-# Author: Stefano Mammola, Adrià Bellvert
+# Authors of the code: Stefano Mammola, Adrià Bellvert
 
 # Loading R packages ------------------------------------------------------
 
@@ -31,7 +31,7 @@ theme_update(
 
 # Loading the main database ------------------------------------------------
 
-db <- read.csv(file = "Data/Database_ecosystem_services.csv", header = TRUE, sep = "\t", as.is = FALSE)
+db <- read.csv(file = "Data/Appendix_S1.csv", header = TRUE, sep = "\t", as.is = FALSE)
 
 str(db)
 
@@ -216,7 +216,7 @@ figure3
 dev.off()
 
 ## ------------------------------------------------------------------------
-# 'Mapping part'
+# 'Mapping part' - Figure 4
 ## ------------------------------------------------------------------------
 
 # Load and merge Groundwater rasters --------------------------------------
