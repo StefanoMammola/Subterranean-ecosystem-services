@@ -8,7 +8,7 @@
 # 'R script to reproduce the analyses'
 ## ------------------------------------------------------------------------
 
-# Analysis performed with R (v. R 4.0.3) and R studio (v. 1.4.1103)
+# Analysis performed with R (v. R 4.4.1) and R studio (v. 2023.12.0+369)
 # Authors of the code: Stefano Mammola, Adrià Bellvert
 
 # Loading R packages ------------------------------------------------------
@@ -31,7 +31,7 @@ theme_update(
 
 # Loading the main database ------------------------------------------------
 
-db <- read.csv(file = "Data/Appendix_S1.csv", header = TRUE, sep = "\t", as.is = FALSE)
+db <- read.csv(file = "Data/Appendix_S1_Rev1.csv", header = TRUE, sep = "\t", as.is = FALSE)
 
 str(db)
 
