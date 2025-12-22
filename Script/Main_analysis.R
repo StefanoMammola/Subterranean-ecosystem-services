@@ -231,12 +231,12 @@ ug  <- raster::merge(ugL, ugR, tolerance=0.05,  overlap=F, ext=NULL)
 
 # Load Irrigation rasters and unify crs -----------------------------------
 
-raster2 <- raster("Data_map/Rasters/irrigation.tif")
-raster1 <- resample(ug, raster2)
+raster2 <- raster::raster("Data_map/Rasters/irrigation.tif")
+raster1 <- terra::resample(ug, raster2)
 
 EqualEarthProj <- "+proj=eqearth +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-raster1 <- projectRaster(raster1, crs = EqualEarthProj)
-raster2 <- projectRaster(raster2, crs = EqualEarthProj)
+raster1 <- raster::projectRaster(raster1, crs = EqualEarthProj)
+raster2 <- raster::projectRaster(raster2, crs = EqualEarthProj)
 
 # Load country borders ----------------------------------------------------
 
@@ -245,7 +245,7 @@ countries <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf")
 countries <- countries[countries$sovereignt%ni%c("Antarctica"),]
 
 countries <- countries %>%
-  st_transform(EqualEarthProj)
+  sf::st_transform(EqualEarthProj)
 
 # Crop rasters ------------------------------------------------------------
 
@@ -268,7 +268,7 @@ raster2_class <- cut(raster2[], breaks = breaks2, labels = c(1, 2, 3))
 
 # Combine rasters and define palette --------------------------------------
 combined_raster <- as.numeric(raster1_class) * 10 + as.numeric(raster2_class) 
-combined_raster <- raster(matrix(combined_raster, nrow = nrow(raster1), ncol = ncol(raster1), byrow = TRUE))
+combined_raster <- raster::raster(matrix(combined_raster, nrow = nrow(raster1), ncol = ncol(raster1), byrow = TRUE))
 
 extent(combined_raster) <- extent(raster1)
 crs(combined_raster) <- crs(raster1)
@@ -307,7 +307,7 @@ legend_df$color <- as.vector(bivariate_colors)  # Add the colors to the data fra
 map_legend <- ggplot() +
   geom_tile(data = legend_df, aes(x = Irrigation, y = Groundwater, fill = color)) +
   scale_fill_identity() +
-  labs(x = "Irrigation →", y = "Groundwater →") +
+  labs(x = "Irrigation →", y = "Groundwater depth →") +
   theme_minimal() +
   theme(axis.title = element_text(size = 10),
         axis.text.x = element_text(angle = 45, hjust = 1))
@@ -327,27 +327,31 @@ rm(list=setdiff(ls(), c("Irrigation_Groundwater_plot")))
 # ==========================================
 
 # Load mines shape files and country borders ------------------------------
-mines <- st_read("Data_map/74548 mine polygons/74548_projected.shp")
+
+#This file is not provided due to data restriction. Request it through the British Geological Survey
+mines <- sf::st_read("Data_map/74548 mine polygons/74548_projected.shp") 
+
 countries <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf") 
 `%ni%` <- Negate(`%in%`)
 countries <- countries[countries$sovereignt%ni%c("Antarctica"),]
 
 # Ensure CRS is the same
-mines <- st_transform(mines, crs = st_crs(countries))
+st_crs(mines) <- 3395
+mines <- sf::st_transform(mines, crs = st_crs(countries))
 
-countries <- st_transform(countries, 3395)
-mines <- st_transform(mines, 3395)
+countries <- sf::st_transform(countries, 3395)
+mines <- sf::st_transform(mines, 3395)
 
 invalid_mines <- mines[!st_is_valid(mines), ]
 invalid_countries <- countries[!st_is_valid(countries), ]
 
 # Repair invalid geometries
-mines <- st_make_valid(mines)
-countries <- st_make_valid(countries)
+mines <- sf::st_make_valid(mines)
+countries <- sf::st_make_valid(countries)
 
 # Calculate mines and countries area --------------------------------------
 
-mines_by_country <- st_intersection(mines, countries)
+mines_by_country <- sf::st_intersection(mines, countries)
 
 mines_by_country <- mines_by_country |>
   mutate(mine_area = st_area(geometry))
@@ -360,7 +364,6 @@ mine_area_by_country <- mines_by_country |>
   summarize(total_mine_area = sum(mine_area))
 
 # Calculate of % of area occupied by mines by country ---------------------
-
 countries_area <- as.data.frame(cbind(countries$sovereignt, countries$country_area))
 countries_area$V2 <- as.numeric(countries_area$V2)
 colnames(countries_area) <- c("sovereignt", "country_area")
@@ -383,11 +386,10 @@ result$percent_mine_area <- as.numeric(result$percent_mine_area)
 # Convert data to equal earth projection ----------------------------------
 
 equal_area_projection <- c("+proj=eqearth")
-result_mines <- result %>%
-  st_transform(equal_area_projection)
+result_mines <- result |>
+  sf::st_transform(equal_area_projection)
 
 # Load minerals extraction ------------------------------------------------
-
 
 temp <- list.files(path = "Data_map/Minerals", pattern="\\.csv$")
 
@@ -397,23 +399,21 @@ mineral <- lapply(temp, read.delim, sep =",")
 for (i in 1:length(mineral)) {
   
   al2 <- mineral[[i]] %>%
-    select(which(sapply(., is.numeric)))
-  al2 <- al2 %>% select_if(is.numeric) %>% replace(is.na(.), 0)
-  al2$total <- rowSums(al2[,c(1:length(colnames(al2)))])
+    dplyr::select(which(sapply(., is.numeric)))
+  al2 <- al2 |> dplyr::select_if(is.numeric)  %>% replace(is.na(.), 0)
+  al2$total   <- rowSums(al2[,c(1:length(colnames(al2)))])
   al2$country <- mineral[[i]][,1]
   
   mineral[[i]] <- al2
 }
 
 result <- bind_rows(lapply(mineral, function(df) {
-  df %>% select(country, total)  
-})) %>%
-  group_by(country) %>%
-  summarize(Total_Value = sum(total, na.rm = TRUE))
+  df |> dplyr::select(country, total)  
+})) |>
+  group_by(country)
 
-`%ni%` <- Negate(`%in%`)
-
-result0 <- result[result$Total_Value%ni%0,]
+result0 <- result[result$total>0,]
+colnames(result0)[2] <- "Total_Value"
 
 # Rename unmatched countries ----------------------------------------------
 
@@ -421,7 +421,7 @@ library("plyr")
 
 countries <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf") 
 
-result0$names_notfound <-   result0$country %in%countries$sovereignt
+result0$names_notfound <-   result0$country %in% countries$sovereignt
 result0$country <- revalue(result0$country, c("Bosnia & Herzegovina" = "Bosnia and Herzegovina",
                                               "Congo" = "Republic of the Congo",
                                               "Congo, Democratic Republic" = "Democratic Republic of the Congo",
@@ -484,7 +484,7 @@ legend_data <- expand.grid(mining_intensity = c("Low", "Medium", "High"), minera
 map_legend <- ggplot() +
   geom_tile(data = legend_data, aes(x = mining_intensity, y = mineral_intensity, fill = color)) +
   scale_fill_identity() +
-  labs(x = "Mining Intensity →", y = "Mineral Extraction →") +
+  labs(x = "Mining intensity →", y = "Mineral extraction →") +
   theme_minimal() +
   theme(axis.title = element_text(size = 10),
         axis.text.x = element_text(angle = 45, hjust = 1))
@@ -536,13 +536,13 @@ for (i in 1:length(unique(data$Country))) {
 }
 
 equal_area_projection <- c("+proj=eqearth")
-world_combined <- world_combined %>%
-  st_transform(equal_area_projection)
+world_combined <- world_combined |>
+  sf::st_transform(equal_area_projection)
 
 # Classify each raster into 3 categories (Low, Medium, High) --------------
 
-world_combined <- world_combined %>%
-  mutate(
+world_combined <- world_combined |>
+  dplyr::mutate(
     visitors_cat = cut(visitors, breaks = quantile(visitors, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE), 
                        labels = c("Low", "Medium", "High"), include.lowest = TRUE),
     income_cat = cut(income, breaks = quantile(income, probs = c(0, 1/3, 2/3, 1), na.rm = TRUE), 
@@ -558,10 +558,10 @@ bivariate_colors <- c(
   "High_Low" = "#2171b5", "High_Medium" = "#08519c", "High_High" = "#08306b"
 )
 
-world_combined <- world_combined %>%
+world_combined <- world_combined|>
   mutate(color = bivariate_colors[bivariate_class])
 
-world_combined$color <- replace_na(world_combined$color, "white")
+world_combined$color <- tidyr::replace_na(world_combined$color, "white")
 
 # Create plot -------------------------------------------------------------
 
@@ -616,7 +616,7 @@ ugLR <- raster::raster("Data_map/Rasters/water_table_2015_4.tif")
 
 ugL <- raster::merge(ugLL, ugUL, tolerance=0.05,  overlap=F, ext=NULL)
 ugR <- raster::merge(ugLR, ugUR, tolerance=0.05,  overlap=F, ext=NULL)
-ug <- raster::merge(ugL, ugR, tolerance=0.05,  overlap=F, ext=NULL)
+ug  <- raster::merge(ugL, ugR, tolerance=0.05,  overlap=F, ext=NULL)
 
 # Load Population raster and unify crs ------------------------------------
 
@@ -625,25 +625,25 @@ population <- raster::raster("Data_map/Rasters/population.tif")
 ugRS <- resample(ug, population)
 
 EqualEarthProj <- "+proj=eqearth +lon_0=0 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs"
-ugRS <- projectRaster(ugRS, crs = EqualEarthProj)
-population <- projectRaster(population, crs = EqualEarthProj)
+ugRS <- raster::projectRaster(ugRS, crs = EqualEarthProj)
+population <- raster::projectRaster(population, crs = EqualEarthProj)
 
 # Load country borders ----------------------------------------------------
 
-countries <- ne_countries(scale = "large", returnclass = "sf") 
+countries <- rnaturalearth::ne_countries(scale = "large", returnclass = "sf") 
 `%ni%` <- Negate(`%in%`)
 countries <- countries[countries$sovereignt%ni%c("Antarctica"),]
 
 countries <- countries %>%
-  st_transform(EqualEarthProj)
+  sf::st_transform(EqualEarthProj)
 
 # Crop rasters ------------------------------------------------------------
 
-ugRS <- crop(ugRS, extent(countries))
-population <- crop(population, extent(countries))
+ugRS <- terra::crop(ugRS, extent(countries))
+population <- terra::crop(population, extent(countries))
 
-ugRS <- mask(x = ugRS, mask = countries)
-population <- mask(x = population, mask = countries)
+ugRS <- terra::mask(x = ugRS, mask = countries)
+population <- terra::mask(x = population, mask = countries)
 
 # Classify each raster into 3 categories (Low, Medium, High) --------------
 breaks1 <- quantile(ugRS[], probs = c(0, 1/3, 2/3, 1), na.rm = TRUE)
@@ -679,7 +679,6 @@ detach("package:plyr", unload=TRUE)
 
 raster_df$color <- bivariate_colors[as.character(raster_df$layer)]  # Map colors using the palette
 
-
 # Create plot -------------------------------------------------------------
 
 GroundWater_population_plot <- ggplot() +
@@ -698,7 +697,7 @@ legend_df$color <- as.vector(bivariate_colors)
 map_legend <- ggplot() +
   geom_tile(data = legend_df, aes(x = population, y = ug, fill = color)) +
   scale_fill_identity() +
-  labs(x = "Population →", y = "Groundwater →") +
+  labs(x = "Population →", y = "Groundwater depth →") +
   theme_minimal() +
   theme(axis.title = element_text(size = 10),
         axis.text.x = element_text(angle = 45, hjust = 1))
