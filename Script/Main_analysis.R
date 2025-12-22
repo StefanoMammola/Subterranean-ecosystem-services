@@ -158,7 +158,7 @@ my.colors.system <- c("Terrestrial" = "#A0522D",
       "TotalPresence" = "grey70",
       "TotalTested" = "grey20"
     )) +
-    theme_void() +  # Remove unnecessary elements
+    theme_void() +
     labs(title = " ", x = " ") + # white space
     theme(
       plot.title = element_text(size = 50, face = "bold", hjust = 0.5),
@@ -196,10 +196,8 @@ my.colors.system <- c("Terrestrial" = "#A0522D",
     scale_fill_manual(values = my.colors.system) +
     labs(title = NULL, x = NULL, y = "Number of classified services") +
     theme(
-      legend.position = "none",           # Remove legend
-      #axis.text.y = element_blank(),      # Remove y-axis text
-      #axis.ticks.y = element_blank(),     # Remove y-axis ticks
-      axis.text.x = element_text(size = 12), # Enlarge x-axis tick text
+      legend.position = "none",          
+      axis.text.x = element_text(size = 12),
       axis.text.y = element_text(size = 10)
     ))
 
