@@ -31,7 +31,7 @@ theme_update(
 
 # Loading the main database ------------------------------------------------
 
-db <- read.csv(file = "Data/Appendix_S1_Rev1.csv", header = TRUE, sep = "\t", as.is = FALSE)
+db <- read.csv(file = "Data/Appendix_S1.csv", header = TRUE, sep = "\t", as.is = FALSE)
 
 str(db)
 

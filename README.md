@@ -1,6 +1,8 @@
 # R scripts and data to reproduce the analyses in:
 
-Mammola S., et al. (2025). Subterranean environments contribute to three-quarters of classified ecosystem services. Biological reviews, in press (preprint available in EcoEvoRxiv, https://doi.org/10.32942/X2JM0S).
+Mammola S., et al. (2025). Subterranean environments contribute to three-quarters of classified ecosystem services. Biological reviews, doi: 10.1002/brv.70137 
+
+(Note that a preprint version is also available in EcoEvoRxiv, https://doi.org/10.32942/X2JM0S).
 
 The folder contains all scripts and data to reproduce the analysis. 
 
